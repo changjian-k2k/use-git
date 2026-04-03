@@ -1,0 +1,214 @@
+{
+  "name": "git-master",
+  "description": "Git expert combining commit architecture, rebase operations, and history archaeology for any Git-based project",
+  "version": "2.0.0",
+  "author": "OpenCode Community",
+  "license": "MIT",
+  "capabilities": ["commit_architect", "rebase_surgeon", "history_archaeologist"],
+  "applicable_projects": ["software", "firmware", "documentation", "configuration", "any git repository"],
+  
+  "commit_architect": {
+    "description": "Atomic commits, dependency ordering, style detection",
+    "core_principles": {
+      "multiple_commits_by_default": {
+        "rule": "ONE COMMIT = AUTOMATIC FAILURE",
+        "guidelines": [
+          "3+ files changed -> MUST be 2+ commits",
+          "5+ files changed -> MUST be 3+ commits",
+          "10+ files changed -> MUST be 5+ commits"
+        ],
+        "split_criteria": [
+          "Different directories/modules -> SPLIT",
+          "Different component types (model/service/view) -> SPLIT",
+          "Can be reverted independently -> SPLIT",
+          "Different concerns (UI/logic/config/test) -> SPLIT",
+          "New file vs modification -> SPLIT"
+        ]
+      },
+      "style_detection": {
+        "description": "Automatically detect commit style from repository history",
+        "styles": [
+          {
+            "name": "SEMANTIC",
+            "pattern": "type: message or type(scope): message",
+            "example": "feat: add login",
+            "detection": "^(feat|fix|chore|refactor|docs|test|ci|style|perf|build)(\\(.+\\))?:"
+          },
+          {
+            "name": "PLAIN",
+            "pattern": "Just description, no prefix",
+            "example": "Add login feature",
+            "detection": "No conventional prefix, >3 words"
+          },
+          {
+            "name": "SENTENCE",
+            "pattern": "Full sentence style",
+            "example": "Implemented the new login flow",
+            "detection": "Complete grammatical sentence"
+          },
+          {
+            "name": "SHORT",
+            "pattern": "Minimal keywords",
+            "example": "format, lint",
+            "detection": "1-3 words only"
+          }
+        ]
+      },
+      "implementation_test_pairing": {
+        "rule": "Test files MUST be in same commit as implementation",
+        "patterns": [
+          "test_*.py <-> *.py",
+          "*_test.py <-> *.py",
+          "*.test.ts <-> *.ts",
+          "*.spec.ts <-> *.ts",
+          "__tests__/*.ts <-> *.ts",
+          "tests/*.py <-> src/*.py"
+        ]
+      },
+      "dependency_ordering": {
+        "levels": [
+          "Level 0: Utilities, constants, type definitions",
+          "Level 1: Models, schemas, interfaces",
+          "Level 2: Services, business logic",
+          "Level 3: API endpoints, controllers",
+          "Level 4: Configuration, infrastructure"
+        ],
+        "commit_order": "Level 0 -> Level 1 -> Level 2 -> Level 3 -> Level 4"
+      }
+    }
+  },
+
+  "rebase_surgeon": {
+    "description": "History rewriting, conflict resolution, branch cleanup",
+    "modes": {
+      "INTERACTIVE_SQUASH": {
+        "trigger": ["squash commits", "cleanup", "정리"],
+        "purpose": "Combine multiple commits into one"
+      },
+      "REBASE_ONTO_BASE": {
+        "trigger": ["rebase on main", "update branch", "메인에 리베이스"],
+        "purpose": "Update branch with latest base branch changes"
+      },
+      "AUTOSQUASH": {
+        "trigger": ["autosquash", "apply fixups"],
+        "purpose": "Automatically apply fixup! and squash! commits"
+      },
+      "INTERACTIVE_REORDER": {
+        "trigger": ["reorder commits", "커밋 순서"],
+        "purpose": "Reorder commits in history"
+      },
+      "INTERACTIVE_EDIT": {
+        "trigger": ["split commit", "커밋 분리"],
+        "purpose": "Split a single commit into multiple"
+      }
+    },
+    "safety_rules": [
+      "NEVER rebase main/master",
+      "Always stash dirty working directory first",
+      "Use --force-with-lease instead of --force",
+      "Check if commits are local-only before aggressive rewrite"
+    ],
+    "conflict_resolution": {
+      "workflow": [
+        "1. Identify conflicting files: git status | grep 'both modified'",
+        "2. For each conflict: Read file, understand both versions",
+        "3. Resolve by editing file, remove conflict markers",
+        "4. Stage resolved files: git add <file>",
+        "5. Continue rebase: git rebase --continue",
+        "6. If stuck: git rebase --abort (safe rollback)"
+      ]
+    }
+  },
+
+  "history_archaeologist": {
+    "description": "Finding when/where specific changes were introduced",
+    "search_types": {
+      "PICKAXE": {
+        "command": "git log -S",
+        "purpose": "Find commits that ADD or REMOVE a specific string",
+        "examples": [
+          "git log -S 'def calculate_discount' --oneline",
+          "git log -S 'MAX_RETRY_COUNT' --all --oneline"
+        ]
+      },
+      "REGEX": {
+        "command": "git log -G",
+        "purpose": "Find commits where diff MATCHES a regex pattern",
+        "examples": [
+          "git log -G 'def\\s+my_function' --oneline",
+          "git log -G '^import\\s+requests' -- '*.py' --oneline"
+        ]
+      },
+      "BLAME": {
+        "command": "git blame",
+        "purpose": "Line-by-line attribution",
+        "examples": [
+          "git blame -L 10,20 path/to/file.py",
+          "git blame -C path/to/file.py (ignore moves)"
+        ]
+      },
+      "BISECT": {
+        "command": "git bisect",
+        "purpose": "Binary search for bug introduction",
+        "workflow": [
+          "1. git bisect start",
+          "2. git bisect bad (mark current)",
+          "3. git bisect good v1.0.0 (mark known good)",
+          "4. Test middle commit, mark good/bad",
+          "5. Repeat until git finds culprit",
+          "6. git bisect reset"
+        ]
+      },
+      "FILE_LOG": {
+        "command": "git log -- path",
+        "purpose": "Full history of a file",
+        "examples": [
+          "git log --follow --oneline -- path/to/file.py",
+          "git log --all --full-history -- '**/deleted_file.py'"
+        ]
+      }
+    }
+  },
+
+  "universal_rules": {
+    "git_env_prefix": {
+      "description": "EVERY git command MUST be prefixed with GIT_MASTER=1",
+      "examples": [
+        "GIT_MASTER=1 git status",
+        "GIT_MASTER=1 git add <files>",
+        "GIT_MASTER=1 git commit -m 'message'",
+        "GIT_MASTER=1 git rebase ..."
+      ],
+      "purpose": "Allows custom git hooks to detect when git-master skill is active"
+    },
+    "anti_patterns": [
+      "NEVER make one giant commit - 3+ files MUST be 2+ commits",
+      "NEVER default to semantic commits - detect from git log first",
+      "NEVER separate test from implementation - same commit always",
+      "NEVER group by file type - group by feature/module",
+      "NEVER rewrite pushed history without explicit permission",
+      "NEVER leave working directory dirty - complete all changes",
+      "NEVER skip JUSTIFICATION - explain why files are grouped",
+      "NEVER use vague grouping reasons - 'related to X' is NOT valid"
+    ]
+  },
+
+  "supported_workflows": [
+    "Git Flow (feature -> develop -> main)",
+    "GitHub Flow (feature -> main)",
+    "Trunk-based Development",
+    "Forking Workflow",
+    "Any custom workflow"
+  ],
+
+  "reminders": [
+    "ALWAYS detect commit style from repository history before making commits",
+    "ALWAYS create multiple atomic commits instead of one giant commit",
+    "ALWAYS pair test files with their implementation in the same commit",
+    "ALWAYS justify file groupings with specific, concrete reasons",
+    "ALWAYS check branch state before aggressive history rewrites",
+    "ALWAYS use GIT_MASTER=1 prefix for all git commands",
+    "NEVER assume semantic commits - detect actual style first",
+    "NEVER rebase shared/pushed branches without coordination"
+  ]
+}
