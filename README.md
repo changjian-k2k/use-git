@@ -1,6 +1,6 @@
-# OpenCode Git Workflow Skills
+# Use Git - OpenCode Git Workflow Skills
 
-[![npm version](https://img.shields.io/npm/v/opencodeskills-git-workflow.svg)](https://www.npmjs.com/package/opencodeskills-git-workflow)
+[![npm version](https://img.shields.io/npm/v/@changjian-k2k/use-git.svg)](https://www.npmjs.com/package/@changjian-k2k/use-git)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 一组通用的 Git 工作流技能，适用于各种软件开发场景（软件、固件、文档等）。
@@ -11,20 +11,20 @@
 
 ```bash
 # 全局安装
-npm install -g opencodeskills-git-workflow
+npm install -g @changjian-k2k/use-git
 
 # 或使用 npx（无需全局安装）
-npx opencodeskills-git-workflow
+npx @changjian-k2k/use-git
 ```
 
 ### 手动安装
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/opencodeskills-git-workflow.git
+git clone https://github.com/changjian-k2k/use-git.git
 
 # 进入目录并运行安装脚本
-cd opencodeskills-git-workflow
+cd use-git
 npm install
 ```
 
@@ -101,7 +101,7 @@ OpenCode: 搜索代码历史中...
 ## 📦 项目结构
 
 ```
-opencodeskills-git-workflow/
+use-git/
 ├── README.md                  # 本文件
 ├── package.json              # npm 包配置
 ├── LICENSE                   # MIT 许可证
@@ -117,7 +117,7 @@ opencodeskills-git-workflow/
 
 ### npm 安装后的自动配置
 
-当你运行 `npm install -g opencodeskills-git-workflow` 时：
+当你运行 `npm install -g @changjian-k2k/use-git` 时：
 
 1. 📥 下载技能包
 2. 🔧 自动运行安装脚本
@@ -130,10 +130,10 @@ opencodeskills-git-workflow/
 
 ```bash
 # 使用 npx 运行安装
-npx opencodeskills-git-workflow
+npx @changjian-k2k/use-git
 
 # 或运行特定脚本
-npx git-workflow-install
+npx use-git-install
 ```
 
 ### 验证安装
@@ -150,7 +150,7 @@ ls ~/.opencodeskills/*.skill
 
 ```bash
 # 使用 npm 卸载
-npm uninstall -g opencodeskills-git-workflow
+npm uninstall -g @changjian-k2k/use-git
 
 # 这将自动运行卸载脚本，移除技能文件
 ```
@@ -170,7 +170,7 @@ npm uninstall -g opencodeskills-git-workflow
 ```
 用户: 我要添加用户认证功能
 
-OpenCode: 
+OpenCode:
 1. 创建 feature/user-auth 分支
 2. 实现代码更改
 3. 运行 LSP 诊断和测试
@@ -219,14 +219,14 @@ OpenCode:
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/opencodeskills-git-workflow.git
-cd opencodeskills-git-workflow
+git clone https://github.com/changjian-k2k/use-git.git
+cd use-git
 
 # 本地安装测试
 npm link
 
 # 验证安装
-npx opencodeskills-git-workflow
+npx @changjian-k2k/use-git
 
 # 取消链接
 npm unlink
@@ -239,7 +239,7 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 ## 👥 作者
 
 - **原作者**: RT2401 团队
-- **维护者**: OpenCode Community
+- **维护者**: changjian-k2k
 
 ## 🔗 相关链接
 
