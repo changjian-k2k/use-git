@@ -3,7 +3,13 @@
 /**
  * OpenCode Git Workflow Skills - Installation Script
  * 
- * This script installs the skill files to the user's OpenCode skills directory
+ * This script installs the skill directories (with SKILL.md) to the user's
+ * OpenCode skills directory following the standard SKILL.md format.
+ * 
+ * Standard structure:
+ *   ~/.opencode/skills/<name>/SKILL.md
+ *   ~/.claude/skills/<name>/SKILL.md
+ *   ~/.agents/skills/<name>/SKILL.md
  */
 
 const fs = require('fs');
@@ -25,17 +31,23 @@ function log(message, color = 'reset') {
   console.log(`${colors[color]}${message}${colors.reset}`);
 }
 
-function getSkillsDirectory() {
+/**
+ * Get all target directories where skills should be installed.
+ * OpenCode searches multiple locations for skills.
+ */
+function getTargetSkillDirectories() {
   const homeDir = os.homedir();
   
-  switch (process.platform) {
-    case 'win32':
-      return path.join(homeDir, '.opencodeskills');
-    case 'darwin':
-    case 'linux':
-    default:
-      return path.join(homeDir, '.opencodeskills');
-  }
+  return [
+    // OpenCode standard paths
+    path.join(homeDir, '.opencode', 'skills'),
+    path.join(homeDir, '.config', 'opencode', 'skills'),
+    // Claude-compatible paths
+    path.join(homeDir, '.claude', 'skills'),
+    path.join(homeDir, '.agents', 'skills'),
+    // Legacy path (backward compatibility)
+    path.join(homeDir, '.opencodeskills'),
+  ];
 }
 
 function getPackageSkillsDir() {
@@ -54,37 +66,48 @@ function getPackageSkillsDir() {
   return path.join(__dirname, '..', 'skills');
 }
 
-function ensureDirectoryExists(dir) {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-    log(`Created directory: ${dir}`, 'cyan');
+/**
+ * Recursively copy a directory
+ */
+function copyDirectory(source, target) {
+  if (!fs.existsSync(target)) {
+    fs.mkdirSync(target, { recursive: true });
+  }
+  
+  const entries = fs.readdirSync(source, { withFileTypes: true });
+  
+  for (const entry of entries) {
+    const srcPath = path.join(source, entry.name);
+    const destPath = path.join(target, entry.name);
+    
+    if (entry.isDirectory()) {
+      copyDirectory(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
   }
 }
 
-function copySkillFile(source, target) {
-  try {
-    fs.copyFileSync(source, target);
-    return true;
-  } catch (error) {
-    log(`Error copying ${path.basename(source)}: ${error.message}`, 'red');
-    return false;
-  }
+/**
+ * Check if a directory is a valid skill (contains SKILL.md)
+ */
+function isValidSkillDir(dir) {
+  return fs.existsSync(path.join(dir, 'SKILL.md'));
 }
 
 function installSkills() {
   log('\n' + '='.repeat(60), 'bright');
-  log('OpenCode Git Workflow Skills - Installation', 'bright');
+  log('Use Git - OpenCode Skills Installation', 'bright');
   log('='.repeat(60) + '\n', 'bright');
 
   // Get directories
-  const targetDir = getSkillsDirectory();
+  const targetDirs = getTargetSkillDirectories();
   const sourceDir = getPackageSkillsDir();
 
   log(`Source directory: ${sourceDir}`, 'cyan');
-  log(`Target directory: ${targetDir}\n`, 'cyan');
-
-  // Ensure target directory exists
-  ensureDirectoryExists(targetDir);
+  log(`Target directories:\n`, 'cyan');
+  targetDirs.forEach(dir => log(`  - ${dir}`, 'cyan'));
+  log('');
 
   // Check if source directory exists
   if (!fs.existsSync(sourceDir)) {
@@ -93,60 +116,92 @@ function installSkills() {
     process.exit(1);
   }
 
-  // Get all skill files
-  const skillFiles = fs.readdirSync(sourceDir)
-    .filter(file => file.endsWith('.skill'))
-    .map(file => ({
-      name: file,
-      source: path.join(sourceDir, file),
-      target: path.join(targetDir, file)
-    }));
+  // Get all skill directories (each subdirectory with SKILL.md)
+  const skillDirs = fs.readdirSync(sourceDir, { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map(entry => path.join(sourceDir, entry.name))
+    .filter(dir => isValidSkillDir(dir));
 
-  if (skillFiles.length === 0) {
-    log('No skill files found in the package!', 'red');
+  if (skillDirs.length === 0) {
+    log('No valid skill directories found in the package!', 'red');
+    log('Each skill must be a directory containing SKILL.md', 'yellow');
     process.exit(1);
   }
 
-  log(`Found ${skillFiles.length} skill file(s) to install:\n`, 'blue');
-
-  // Install each skill file
-  let installed = 0;
-  let skipped = 0;
-  let failed = 0;
-
-  skillFiles.forEach(skill => {
-    const exists = fs.existsSync(skill.target);
-    const action = exists ? 'Updating' : 'Installing';
-    
-    log(`${action} ${skill.name}...`, exists ? 'yellow' : 'green');
-    
-    if (copySkillFile(skill.source, skill.target)) {
-      if (exists) {
-        skipped++;
-        log(`  ✓ Updated`, 'green');
-      } else {
-        installed++;
-        log(`  ✓ Installed`, 'green');
-      }
-    } else {
-      failed++;
-      log(`  ✗ Failed`, 'red');
-    }
+  log(`Found ${skillDirs.length} skill(s) to install:\n`, 'blue');
+  skillDirs.forEach(dir => {
+    const skillName = path.basename(dir);
+    log(`  - ${skillName}`, 'cyan');
   });
+  log('');
+
+  // Install to each target directory
+  let totalInstalled = 0;
+  let totalUpdated = 0;
+  let totalFailed = 0;
+
+  for (const targetDir of targetDirs) {
+    // Skip if target parent doesn't exist and can't be created
+    const parentDir = path.dirname(targetDir);
+    if (!fs.existsSync(parentDir)) {
+      try {
+        fs.mkdirSync(parentDir, { recursive: true });
+      } catch (e) {
+        // Skip this target if parent can't be created
+        continue;
+      }
+    }
+
+    // Ensure target directory exists
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+
+    let installed = 0;
+    let updated = 0;
+    let failed = 0;
+
+    for (const skillDir of skillDirs) {
+      const skillName = path.basename(skillDir);
+      const targetSkillDir = path.join(targetDir, skillName);
+      const exists = fs.existsSync(path.join(targetSkillDir, 'SKILL.md'));
+      const action = exists ? 'Updating' : 'Installing';
+      
+      try {
+        copyDirectory(skillDir, targetSkillDir);
+        if (exists) {
+          updated++;
+          log(`  ✓ ${action} ${skillName} → ${targetDir} (updated)`, 'green');
+        } else {
+          installed++;
+          log(`  ✓ ${action} ${skillName} → ${targetDir}`, 'green');
+        }
+      } catch (error) {
+        failed++;
+        log(`  ✗ Failed to install ${skillName} → ${targetDir}: ${error.message}`, 'red');
+      }
+    }
+
+    if (installed > 0 || updated > 0) {
+      totalInstalled += installed;
+      totalUpdated += updated;
+      totalFailed += failed;
+    }
+  }
 
   // Summary
   log('\n' + '='.repeat(60), 'bright');
   log('Installation Summary', 'bright');
   log('='.repeat(60) + '\n', 'bright');
 
-  if (installed > 0) {
-    log(`✓ Installed: ${installed} skill(s)`, 'green');
+  if (totalInstalled > 0) {
+    log(`✓ Installed: ${totalInstalled} skill(s)`, 'green');
   }
-  if (skipped > 0) {
-    log(`✓ Updated: ${skipped} skill(s)`, 'yellow');
+  if (totalUpdated > 0) {
+    log(`✓ Updated: ${totalUpdated} skill(s)`, 'yellow');
   }
-  if (failed > 0) {
-    log(`✗ Failed: ${failed} skill(s)`, 'red');
+  if (totalFailed > 0) {
+    log(`✗ Failed: ${totalFailed} skill(s)`, 'red');
   }
 
   log('\n' + '-'.repeat(60), 'bright');
@@ -156,7 +211,7 @@ function installSkills() {
   log('2. Verify installation: /skill list', 'cyan');
   log('3. Try it: "Help me with git workflow"\n', 'cyan');
 
-  if (failed > 0) {
+  if (totalFailed > 0) {
     process.exit(1);
   }
 }

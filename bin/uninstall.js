@@ -3,7 +3,8 @@
 /**
  * OpenCode Git Workflow Skills - Uninstallation Script
  * 
- * This script removes the skill files from the user's OpenCode skills directory
+ * This script removes the skill directories (with SKILL.md) from the user's
+ * OpenCode skills directories.
  */
 
 const fs = require('fs');
@@ -24,9 +25,22 @@ function log(message, color = 'reset') {
   console.log(`${colors[color]}${message}${colors.reset}`);
 }
 
-function getSkillsDirectory() {
+/**
+ * Get all target directories where skills might be installed.
+ */
+function getTargetSkillDirectories() {
   const homeDir = os.homedir();
-  return path.join(homeDir, '.opencodeskills');
+  
+  return [
+    // OpenCode standard paths
+    path.join(homeDir, '.opencode', 'skills'),
+    path.join(homeDir, '.config', 'opencode', 'skills'),
+    // Claude-compatible paths
+    path.join(homeDir, '.claude', 'skills'),
+    path.join(homeDir, '.agents', 'skills'),
+    // Legacy path (backward compatibility)
+    path.join(homeDir, '.opencodeskills'),
+  ];
 }
 
 function getPackageSkillsDir() {
@@ -43,76 +57,91 @@ function getPackageSkillsDir() {
   return path.join(__dirname, '..', 'skills');
 }
 
+/**
+ * Recursively remove a directory
+ */
+function removeDirectory(dir) {
+  if (fs.existsSync(dir)) {
+    fs.readdirSync(dir).forEach(file => {
+      const curPath = path.join(dir, file);
+      if (fs.lstatSync(curPath).isDirectory()) {
+        removeDirectory(curPath);
+      } else {
+        fs.unlinkSync(curPath);
+      }
+    });
+    fs.rmdirSync(dir);
+  }
+}
+
 function uninstallSkills() {
   log('\n' + '='.repeat(60), 'bright');
-  log('OpenCode Git Workflow Skills - Uninstallation', 'bright');
+  log('Use Git - OpenCode Skills Uninstallation', 'bright');
   log('='.repeat(60) + '\n', 'bright');
 
-  const targetDir = getSkillsDirectory();
+  const targetDirs = getTargetSkillDirectories();
   const sourceDir = getPackageSkillsDir();
 
-  // Check if target directory exists
-  if (!fs.existsSync(targetDir)) {
-    log('OpenCode skills directory not found.', 'yellow');
-    log('Nothing to uninstall.\n', 'yellow');
-    return;
-  }
-
-  // Get skill files from package
-  let skillFiles = [];
+  // Get skill directory names from package
+  let skillNames = [];
   if (fs.existsSync(sourceDir)) {
-    skillFiles = fs.readdirSync(sourceDir)
-      .filter(file => file.endsWith('.skill'));
+    skillNames = fs.readdirSync(sourceDir, { withFileTypes: true })
+      .filter(entry => entry.isDirectory())
+      .map(entry => entry.name);
   } else {
-    // Fallback: try to uninstall known skill files
-    skillFiles = [
-      'git-workflow.skill',
-      'git-master.skill'
-    ];
+    // Fallback: known skill names
+    skillNames = ['git-workflow', 'git-master'];
   }
 
-  if (skillFiles.length === 0) {
+  if (skillNames.length === 0) {
     log('No skills to uninstall.\n', 'yellow');
     return;
   }
 
-  log(`Found ${skillFiles.length} skill file(s) to remove:\n`, 'blue');
+  log(`Found ${skillNames.length} skill(s) to remove:\n`, 'blue');
+  skillNames.forEach(name => log(`  - ${name}`, 'cyan'));
+  log('');
 
-  let removed = 0;
-  let notFound = 0;
-  let failed = 0;
+  let totalRemoved = 0;
+  let totalNotFound = 0;
+  let totalFailed = 0;
 
-  skillFiles.forEach(filename => {
-    const targetPath = path.join(targetDir, filename);
-    
-    if (fs.existsSync(targetPath)) {
-      try {
-        fs.unlinkSync(targetPath);
-        log(`✓ Removed: ${filename}`, 'green');
-        removed++;
-      } catch (error) {
-        log(`✗ Failed to remove ${filename}: ${error.message}`, 'red');
-        failed++;
-      }
-    } else {
-      log(`○ Not found: ${filename}`, 'yellow');
-      notFound++;
+  for (const targetDir of targetDirs) {
+    if (!fs.existsSync(targetDir)) {
+      continue;
     }
-  });
+
+    for (const skillName of skillNames) {
+      const skillPath = path.join(targetDir, skillName);
+      
+      if (fs.existsSync(skillPath)) {
+        try {
+          removeDirectory(skillPath);
+          log(`  ✓ Removed ${skillName} from ${targetDir}`, 'green');
+          totalRemoved++;
+        } catch (error) {
+          log(`  ✗ Failed to remove ${skillName} from ${targetDir}: ${error.message}`, 'red');
+          totalFailed++;
+        }
+      } else {
+        totalNotFound++;
+      }
+    }
+  }
 
   // Summary
   log('\n' + '='.repeat(60), 'bright');
   log('Uninstallation Summary', 'bright');
   log('='.repeat(60) + '\n', 'bright');
 
-  if (removed > 0) {
-    log(`✓ Removed: ${removed} skill(s)`, 'green');
+  if (totalRemoved > 0) {
+    log(`✓ Removed: ${totalRemoved} skill(s)`, 'green');
   }
-  if (notFound > 0) {
-    log(`○ Not installed: ${notFound} skill(s)`, 'yellow');
+  if (totalNotFound > 0 && totalRemoved === 0) {
+    log(`○ Not installed: ${skillNames.length} skill(s)`, 'yellow');
   }
-  if (failed > 0) {
-    log(`✗ Failed: ${failed} skill(s)`, 'red');
+  if (totalFailed > 0) {
+    log(`✗ Failed: ${totalFailed} skill(s)`, 'red');
   }
 
   log('\n' + '-'.repeat(60), 'bright');
@@ -121,7 +150,7 @@ function uninstallSkills() {
   log('1. Restart OpenCode or use /skill reload', 'cyan');
   log('2. Verify removal: /skill list\n', 'cyan');
 
-  if (failed > 0) {
+  if (totalFailed > 0) {
     process.exit(1);
   }
 }

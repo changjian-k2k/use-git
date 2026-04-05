@@ -109,8 +109,10 @@ use-git/
 │   ├── install.js           # 安装脚本
 │   └── uninstall.js         # 卸载脚本
 └── skills/
-    ├── git-workflow.skill   # Git Flow 工作流技能
-    └── git-master.skill     # Git 大师技能
+    ├── git-workflow/
+    │   └── SKILL.md         # Git Flow 工作流技能（标准格式）
+    └── git-master/
+        └── SKILL.md         # Git 大师技能（标准格式）
 ```
 
 ## ⚙️ 安装详情
@@ -121,7 +123,10 @@ use-git/
 
 1. 📥 下载技能包
 2. 🔧 自动运行安装脚本
-3. 📂 复制 `.skill` 文件到 `~/.opencodeskills/`
+3. 📂 复制技能目录到以下位置：
+   - `~/.opencode/skills/<name>/SKILL.md`
+   - `~/.claude/skills/<name>/SKILL.md`
+   - `~/.agents/skills/<name>/SKILL.md`
 4. ✅ 显示安装摘要
 
 ### 手动触发安装
@@ -140,7 +145,8 @@ npx use-git-install
 
 ```bash
 # 检查技能是否安装成功
-ls ~/.opencodeskills/*.skill
+ls ~/.opencode/skills/
+# 应该看到 git-workflow/ 和 git-master/ 目录
 
 # 在 OpenCode 中验证
 /skill list

@@ -1,6 +1,6 @@
 {
   "name": "@changjian-k2k/use-git",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Git workflow skills for OpenCode - Git Flow, commit management, and history operations",
   "main": "index.js",
   "bin": {
